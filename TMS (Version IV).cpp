@@ -3,6 +3,7 @@
 #include <conio.h>
 #include <string>
 #include <math.h>
+
 using namespace std;
 
 //  DATA STRUCTURES
@@ -48,20 +49,53 @@ int loginCustomer = -1; // to keep track which registered customer has logged in
 // Admin Default Login Details
 string sysUsername = "Admin";
 string sysPass = "ad@tms.com";
-
+//  Function Prototypes
+void header();
+void clearScreen();
+char userType();
+bool verification(string username, string password, string tempUsername, string tempPassword);
+int validateInput(char input, int start, int end);
+int managerMenu();
+void packageAlter(char packageType);
+void viewCustomers();
+int getMaxIdx(int c);
+void sortCustomers();
+void cancelRegistration(int cancelReg);
+void approveReg(char appReg);
+void manFeedback();
+bool validateCredentials(string oldC, string newC);
+char cusType();
+int rCusMenu();
+void updateUsage();
+void checkPayable();
+void pkgUpgrade();
+void cusFeedback();
+int nCusMenu();
+void packageView();
+void viewServices();
+void viewPaymentMethod();
+bool validateUsername(string checkUsername);
+bool validatePassword(string checkPassword);
+bool validateEmail(string checkEmail);
+void recommendUsername(string username);
+void nRegistration(string nName, string nUsername, string nPassword, string nEmail, string nPkgType);
+string slice(string line, int field);
+int convert(string n);
+void load();
+void store();
+void calculateBill();
 void header()
 {
     cout << "\n\n\n";
-    cout << "||||||||||||||||||||    ||            ||       ||||||| " << endl;
-    cout << "         ||             || ||      || ||     ||      ||" << endl;
-    cout << "         ||             ||   ||   ||  ||       ||      " << endl;
-    cout << "         ||             ||      ||    ||          ||    " << endl;
-    cout << "         ||             ||            ||     ||     || " << endl;
-    cout << "         ||             ||            ||       |||||| \n\n\n"
-         << endl;
-    cout << "------------------------------------------------------------" << endl;
-    cout << "           Welcome to Telephone Management System" << endl;
-    cout << "------------------------------------------------------------" << endl;
+    cout << " |       _______   __  __    _____      |" << endl;
+    cout << " |      |__   __| |  \\/  |  / ____|     |" << endl;
+    cout << " |         | |    | \\  / | | (___       |" << endl;
+    cout << " |         | |    | |\\/| |  \\___ \\      |" << endl;
+    cout << " |         | |    | |  | |  ____) |     |  " << endl;
+    cout << " |         |_|    |_|  |_| |_____/      |\n\n\n";
+    cout << "-----------------------------------------" << endl;
+    cout << "  Welcome to Telephone Management System" << endl;
+    cout << "-----------------------------------------" << endl;
 }
 void clearScreen()
 {
@@ -110,8 +144,8 @@ int managerMenu()
     cout << "2- Check Total Number if users. \n";
     cout << "3- Check Customers according to their Usage time \n";
     cout << "4- Cancel registration of any user \n";
-    cout << "5- Approve Requests for new Registrations \n";
-    cout << "6- See if any user has given Suggestion/Complaint/Feedback \n";
+    cout << "5- Approve Requests for new Registrations- " << pending << "\n";
+    cout << "6- See if any user has given Suggestion/Complaint/Feedback- " << feedbackCount << "\n";
     cout << "7 -Change your Username or password. \n";
     cout << "8- Log out." << endl;
 
@@ -202,7 +236,6 @@ void sortCustomers()
     {
         int largestIndex = getMaxIdx(i);
         sortedIndices[i] = largestIndex;
-        cout << largestIndex << " ";
     }
 
     // Printing Sorted records
@@ -210,7 +243,7 @@ void sortCustomers()
     if (users > 0)
     {
         cout << "Details:- \n";
-        cout << "Reg#\tName\tPkg\tUsage\tDue-Bill" << endl;
+        cout << "Reg#\tName\t\tPkg\tUsage\tDue-Bill" << endl;
         for (int i = 0; i < users; i++)
         {
             cout << sortedIndices[i] + 1 << "-\t" << name[sortedIndices[i]] << "\t" << pkgType[sortedIndices[i]] << "\t" << usage[sortedIndices[i]] << "\t" << dueBill[sortedIndices[i]] << endl;
@@ -285,16 +318,14 @@ void manFeedback()
     }
     feedbackCount = 0;
 }
-string validateCredentials(string oldC, string newC)
+bool validateCredentials(string oldC, string newC)
 {
-    while ((oldC == newC))
+    if (oldC == newC)
     {
-        cout << "You Entered Old Credential." << endl;
-        cout << "Enter Again: ";
-        cin >> newC;
+        return false;
     }
 
-    return newC;
+    return true;
 }
 char cusType()
 {
@@ -334,11 +365,25 @@ void checkPayable()
     cout << "Total payable : ";
     if (pkgType[loginCustomer] == "Economy")
     {
-        cout << ecSub + usage[loginCustomer] * ecPerMin << endl;
+        cout << ecSub + usage[loginCustomer] * ecPerMin << "$" << endl;
     }
     else
     {
-        cout << pSub + usage[loginCustomer] * pPerMin << endl;
+        cout << pSub + usage[loginCustomer] * pPerMin << "$" << endl;
+    }
+}
+void calculateBill()
+{
+    for (int i = 0; i < users; i++)
+    {
+        if (pkgType[i] == "Economy")
+    {
+        dueBill[i] =  ecSub + usage[i] * ecPerMin;
+    }
+    else
+    {
+        dueBill[i] = pSub + usage[i] * pPerMin;
+    }
     }
 }
 void pkgUpgrade()
@@ -530,23 +575,34 @@ void load()
 {
     fstream file;
     string line;
-    int i = 0;
+    int i = -2;
     string fUsage;
     string fBill;
     file.open("TMS.txt", ios::in);
     while (!file.eof())
     {
         getline(file, line);
-        name[i] = slice(line, 0);
-        username[i] = slice(line, 1);
-        password[i] = slice(line, 2);
-        email[i] = slice(line, 3);
-        pkgType[i] = slice(line, 4);
-        fUsage = slice(line, 5);
-        usage[i] = convert(fUsage);
-        fBill = slice(line, 6);
-        dueBill[i] = convert(fBill);
+        if (i == -2)
+        {
+            sysUsername = line;
+        }
+        else if (i == -1)
+        {
+            sysPass = line;
+        }
+        else
+        {
 
+            name[i] = slice(line, 0);
+            username[i] = slice(line, 1);
+            password[i] = slice(line, 2);
+            email[i] = slice(line, 3);
+            pkgType[i] = slice(line, 4);
+            fUsage = slice(line, 5);
+            usage[i] = convert(fUsage);
+            fBill = slice(line, 6);
+            dueBill[i] = convert(fBill);
+        }
         i++;
     }
     users = i - 1;
@@ -556,7 +612,8 @@ void store()
 {
     fstream file;
     file.open("TMS.txt", ios::out);
-
+    file << sysUsername << endl;
+    file << sysPass << endl;
     for (int i = 0; i < users; i++)
     {
         file << name[i] << "," << username[i] << "," << password[i] << "," << email[i] << "," << pkgType[i] << "," << usage[i] << "," << dueBill[i] << endl;
@@ -592,6 +649,7 @@ main()
                 int managerMenuOp = managerMenu();
                 while (managerMenuOp < 8)
                 {
+                    calculateBill();
                     if (managerMenuOp == 1)
                     {
                         system("cls");
@@ -631,7 +689,7 @@ main()
                         if (users > 0)
                         {
                             cout << "Which Customers Registration You want to cancel?" << endl;
-                            cout << "Name\tEmail\t\t\tPkg\tUsage\tDue-Bill" << endl;
+                            cout << "Name\t\tEmail\t\t\tPkg\tUsage\tDue-Bill" << endl;
                             for (int i = 0; i < users; i++)
                             {
                                 cout << i + 1 << "- " << name[i] << "\t" << email[i] << "\t" << pkgType[i] << "\t" << usage[i] << "\t" << dueBill[i] << endl;
@@ -657,7 +715,7 @@ main()
                             cout << "Name\t\tUsername\tEmail\t\t\tPackage\n";
                             for (int i = 0; i < pending; i++)
                             {
-                                cout << i + 1 << "- "<< tempName[i] <<"\t" << tempUsername[i] << "\t" << tempEmail[i] << "\t\t" << tempPkgType[i] << endl;
+                                cout << i + 1 << "- " << tempName[i] << "\t" << tempUsername[i] << "\t" << tempEmail[i] << "\t\t" << tempPkgType[i] << endl;
                             }
                             cout << "\nA- Approve All\nB- Delete All\n\t\tOr\nEnter index of customer to approve request." << endl;
                             cin >> appReg;
@@ -696,31 +754,79 @@ main()
                             cout << "Enter New Usename: ";
                             string newUsername;
                             cin >> newUsername;
-                            sysUsername = validateCredentials(sysUsername, newUsername);
+                            while (!(validateCredentials(sysUsername, newUsername)))
+                            {
+                                cout << "You Entered Old Username." << endl;
+                                cout << "New Username: ";
+                                cin >> newUsername;
+                            }
+
+                            sysUsername = newUsername;
                         }
                         else if (response == '2')
                         {
                             cout << "Enter New Password: ";
                             string newPassword;
                             cin >> newPassword;
-                            sysPass = validateCredentials(sysPass, newPassword);
+
+                            bool flag = false;
+                            while (!(flag))
+                            {
+                                while (!(validatePassword(newPassword)))
+                                {
+                                    cout << "Weak Password. Use Integers, Special Characters, Upper and lower case letters." << endl;
+                                    cout << "New Password: ";
+                                    cin >> newPassword;
+                                }
+                                while (!validateCredentials(sysPass, newPassword))
+                                {
+                                    cout << "You Entered Old Password." << endl;
+                                    cout << "New Password: ";
+                                    cin >> newPassword;
+                                }
+                                if (validatePassword(newPassword))
+                                {
+                                    flag = true;
+                                }
+                            }
+                            sysPass = newPassword;
                         }
                         else if (response == '3')
                         {
                             cout << "Enter New Usename: ";
                             string newUsername;
                             cin >> newUsername;
-                            sysUsername = validateCredentials(sysUsername, newUsername);
+                            while (!(validateCredentials(sysUsername, newUsername)))
+                            {
+                                cout << "You Entered Old Username." << endl;
+                                cout << "New Username: ";
+                                cin >> newUsername;
+                            }
+                            sysUsername = newUsername;
                             cout << "Enter New Password: ";
                             string newPassword;
                             cin >> newPassword;
-                            while (!(validatePassword(newPassword)))
+                            bool flag = false;
+                            while (!(flag))
+                            {
+                                while (!(validatePassword(newPassword)))
                                 {
                                     cout << "Weak Password. Use Integers, Special Characters, Upper and lower case letters." << endl;
                                     cout << "New Password: ";
                                     cin >> newPassword;
                                 }
-                            sysUsername = validateCredentials(sysUsername, newUsername);
+                                while (!validateCredentials(sysPass, newPassword))
+                                {
+                                    cout << "You Entered Old Password." << endl;
+                                    cout << "New Password: ";
+                                    cin >> newPassword;
+                                }
+                                if (validatePassword(newPassword))
+                                {
+                                    flag = true;
+                                }
+                            }
+                            sysPass = newPassword;
                         }
                         clearScreen();
                         managerMenuOp = managerMenu();
@@ -731,6 +837,7 @@ main()
             else
             {
                 cout << "Wrong username or password." << endl;
+                clearScreen();
             }
         }
         else if (userTypeOp == 'C')
@@ -760,7 +867,7 @@ main()
                             {
                                 system("cls");
                                 int rCusMenuOp = rCusMenu();
-                                while (rCusMenuOp < 6)
+                                while (rCusMenuOp < 7)
                                 {
                                     if (rCusMenuOp == 1)
                                     {
@@ -797,21 +904,109 @@ main()
                                         clearScreen();
                                         rCusMenuOp = rCusMenu();
                                     }
+                                    if (rCusMenuOp == 6)
+                                    {
+                                        system("cls");
+                                        cout << "Change:\n1-Username\n2-Password\n3-Both " << endl;
+                                        char response;
+                                        cin >> response;
+                                        system("cls");
+                                        if (response == '1')
+                                        {
+                                            cout << "Enter New Usename: ";
+                                            string newUsername;
+                                            cin >> newUsername;
+                                            while (!(validateCredentials(username[loginCustomer], newUsername)))
+                                            {
+                                                cout << "You Entered Old Username." << endl;
+                                                cout << "New Username: ";
+                                                cin >> newUsername;
+                                            }
+                                            username[loginCustomer] = newUsername;
+                                        }
+                                        else if (response == '2')
+                                        {
+                                            cout << "Enter New Password: ";
+                                            string newPassword;
+                                            cin >> newPassword;
+                                            bool flag = false;
+                                            while (!(flag))
+                                            {
+                                                while (!(validatePassword(newPassword)))
+                                                {
+                                                    cout << "Weak Password. Use Integers, Special Characters, Upper and lower case letters." << endl;
+                                                    cout << "New Password: ";
+                                                    cin >> newPassword;
+                                                }
+                                                while (!validateCredentials(password[loginCustomer], newPassword))
+                                                {
+                                                    cout << "You Entered Old Password." << endl;
+                                                    cout << "New Password: ";
+                                                    cin >> newPassword;
+                                                }
+                                                if (validatePassword(newPassword))
+                                                {
+                                                    flag = true;
+                                                }
+                                            }
+                                            password[loginCustomer] = newPassword;
+                                        }
+                                        else if (response == '3')
+                                        {
+                                            cout << "Enter New Usename: ";
+                                            string newUsername;
+                                            cin >> newUsername;
+                                            while (!(validateCredentials(username[loginCustomer], newUsername)))
+                                            {
+                                                cout << "You Entered Old Username." << endl;
+                                                cout << "New Username: ";
+                                                cin >> newUsername;
+                                            }
+                                            username[loginCustomer] = newUsername;
+
+                                            cout << "Enter New Password: ";
+                                            string newPassword;
+                                            cin >> newPassword;
+                                            bool flag = false;
+                                            while (!(flag))
+                                            {
+                                                while (!(validatePassword(newPassword)))
+                                                {
+                                                    cout << "Weak Password. Use Integers, Special Characters, Upper and lower case letters." << endl;
+                                                    cout << "New Password: ";
+                                                    cin >> newPassword;
+                                                }
+                                                while (!validateCredentials(password[loginCustomer], newPassword))
+                                                {
+                                                    cout << "You Entered Old Password." << endl;
+                                                    cout << "New Password: ";
+                                                    cin >> newPassword;
+                                                }
+                                                if (validatePassword(newPassword))
+                                                {
+                                                    flag = true;
+                                                }
+                                            }
+                                            password[loginCustomer] = newPassword;
+                                        }
+                                        clearScreen();
+                                        rCusMenuOp = rCusMenu();
+                                    }
                                 }
                             }
                             else
                             {
-                                cout << "Wrong Username or Password.";
+                                cout << "Wrong Username or Password." << endl;
                             }
                         }
                     }
                     else
                     {
                         cout << "No registered Customers yet..." << endl;
-                        clearScreen();
-                        cusTypeOp = cusType();
-                        system("cls");
                     }
+                    clearScreen();
+                    cusTypeOp = cusType();
+                    system("cls");
                 }
                 if (cusTypeOp == 'N')
                 {
